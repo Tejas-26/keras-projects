@@ -1,0 +1,9 @@
+[
+  {
+    "moduleName" : "reportMaker",
+    "path"       : "modules/reportMaker/reportMaker.py",
+    "execute"    : true,
+    "description": "",
+    "owner"      : ""
+  }
+]
