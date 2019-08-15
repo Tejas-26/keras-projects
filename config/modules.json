@@ -1,7 +1,7 @@
 [
   {
-    "moduleName" : "reportMaker",
-    "path"       : "modules/reportMaker/reportMaker.py",
+    "moduleName" : "aSpicyMLBoi",
+    "path"       : "modules/aSpicyMLBoi/aSpicyMLBoi.py",
     "execute"    : true,
     "description": "",
     "owner"      : ""

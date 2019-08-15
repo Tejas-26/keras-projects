@@ -1,17 +1,17 @@
 {
     "logging":{
-        
-        "logBase" : "holmuskTest",
+
+        "logBase" : "keras-projects",
         "level"   : "INFO",
         "specs"   : {
 
             "file":{
                 "todo"     : true,
-                "logFolder": "logs" 
+                "logFolder": "logs"
             },
 
             "stdout":{
-                "todo"     : false 
+                "todo"     : false
             },
 
             "logstash":{
