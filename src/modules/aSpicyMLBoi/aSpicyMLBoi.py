@@ -1,3 +1,4 @@
+from logs import logDecorator as lD
 import jsonref
 from numpy import loadtxt
 from keras.models import Sequential
@@ -6,7 +7,7 @@ from keras.layers import Dense
 config = jsonref.load(open('../config/config.json'))
 logBase = config['logging']['logBase'] + '.modules.aSpicyMLBoi.aSpicyMLBoi'
 
-# @lD.log(logBase + '.main')
+@lD.log(logBase + '.main')
 def main(logger, resultDict):
     '''
     main function for aSpicyMLBoi
@@ -47,8 +48,9 @@ def main(logger, resultDict):
     # epoch = one pass throuh all training dataset rows
     # batch = at least one sample that model considers within an epoch before updating weights
     # in this case
-    model.fit(X,y,epochs=150,batch_size=10) # 15 batches here
-    _, accuracy = model.evaluate(X,y) # determine accuracy
+    model.fit(X,y,epochs=150,batch_size=10, verbose=0) # 15 batches here
+    print("does it reach here")
+    _, accuracy = model.evaluate(X,y,verbose=0) # determine accuracy
     print('The boi has an accuracy of %.2f'%(accuracy*100))
     print('Getting out of aSpicyMLBoi module')
     print('-'*30)

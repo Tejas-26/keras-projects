@@ -1,7 +1,7 @@
-#!/bin/bash 
+#!/bin/bash
 
 # --- First, run the program
-python3 holmuskTest.py
+python3 keras-projects.py
 
 # --- Check to see if there was an error
 #  make sure we redirect of the error message
@@ -21,7 +21,7 @@ done
 if [ "$SHOW_ALL_LOG" = 'yes' ]
 then
     echo "The entire log file:"
-    cat $logFile 
+    cat $logFile
 fi
 
 # Find the timming information
