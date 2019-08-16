@@ -2,6 +2,20 @@
   {
     "moduleName" : "aSpicyMLBoi",
     "path"       : "modules/aSpicyMLBoi/aSpicyMLBoi.py",
+    "execute"    : false,
+    "description": "",
+    "owner"      : ""
+  },
+  {
+    "moduleName" : "utils",
+    "path"       : "modules/kerasDatabaseStuff/utils.py",
+    "execute"    : false,
+    "description": "",
+    "owner"      : ""
+  },
+  {
+    "moduleName" : "kerasDatabaseStuff",
+    "path"       : "modules/kerasDatabaseStuff/kerasDatabaseStuff.py",
     "execute"    : true,
     "description": "",
     "owner"      : ""
