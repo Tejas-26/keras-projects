@@ -4,17 +4,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import csv
+
+from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 from sklearn.model_selection import train_test_split as tts
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.datasets import load_files
+
+from keras import backend as K
+from keras.models import Model, Sequential
+from keras.layers.core import Activation
+from keras.layers import Input, Embedding, Flatten, dot, Dense
+from keras.optimizers import Adam
+
 from psycopg2.sql import SQL, Identifier, Literal
 from lib.databaseIO import pgIO
 from collections import Counter
 from textwrap import wrap
 
-import keras
-from keras.models import Sequential
-from keras.layers import Dense
 
 config = jsonref.load(open('../config/config.json'))
 logBase = config['logging']['logBase'] + '.modules.utils.utils'
@@ -74,7 +83,7 @@ def createDF_allRaces_anySUD(logger):
     return df
 
 @lD.log(logBase + '.logRegress')
-def nnClassify(logger, first, second, ts):
+def nnClassify(logger, first, second, ts, num_epochs):
     '''Performs classification with hidden layer NN
     Decorators:
         lD.log
@@ -87,7 +96,6 @@ def nnClassify(logger, first, second, ts):
         print("Performing classification with hidden layer NN...")
         query = '''
         SELECT * from tejas.restofusers_t3_p1
-        LIMIT 1000
         '''
         data = pgIO.getAllData(query)#returns list of tuples (T/F,.......)
         csvfile = '../data/firstThouSUDorNah.csv'
@@ -128,7 +136,8 @@ def nnClassify(logger, first, second, ts):
         # Compiling Neural Network
         classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
         # Fitting our model
-        classifier.fit(X_train, y_train, batch_size = 100, epochs = 500)
+        # Number of epochs and batch sizes are hyperparameters
+        classifier.fit(X_train, y_train, batch_size = 100, epochs = num_epochs, verbose = 0)
         # Predicting the Test set results
         y_pred = classifier.predict(X_test)
         y_pred = (y_pred > 0.5)
@@ -199,3 +208,77 @@ def createDF_allRaces_morethan2SUD(logger):
         logger.error('createDF_allRaces_morethan2SUD failed because of {}'.format(e))
 
     return df
+
+@lD.log(logBase + '.doSomeShit')
+def doSomeShit(logger):
+    print("Performing decision tree magic...")
+    query = '''
+    SELECT * from tejas.comorbid_data
+    limit 1000
+    '''
+    data = pgIO.getAllData(query)#returns list of tuples (T/F,.......)
+    csvfile = '../data/comorbidSUD.csv'
+    with open(csvfile,'w+') as f:
+        csv_out=csv.writer(f)
+        csv_out.writerows(data)
+    f.close()
+    balance_data = pd.read_csv(csvfile,sep= ',', header= None)
+    # print("Dataset Lenght:: ", len(balance_data))
+    # print("Dataset Shape:: ", balance_data.shape)
+    # print(balance_data)
+    Y = balance_data.iloc[:, 0].values
+    X = balance_data.iloc[:, 1:].values
+    # print(X)
+    # print(Y)
+    lab_enc_sex = LabelEncoder()
+    X[:,1] = lab_enc_sex.fit_transform(X[:,1])
+    lab_enc_setting = LabelEncoder()
+    X[:,2] = lab_enc_setting.fit_transform(X[:,2])
+    lab_enc_race = LabelEncoder()
+    X[:,3] = lab_enc_race.fit_transform(X[:,3])
+    # sex and setting are binary variables
+    # must create dummy variable for race since race = 'aa', 'nhpi' or 'mr'
+    onehotencoder = OneHotEncoder(categorical_features = [2])
+    X = onehotencoder.fit_transform(X).toarray()
+    # print("big oof")
+    X_train, X_test, y_train, y_test = tts(X,Y,test_size = 0.3,
+                                            random_state = 100)
+    # print("yeet myself off the cliff")
+    clf_gini = DecisionTreeClassifier(criterion = "gini", random_state = 100,
+                               max_depth=3, min_samples_leaf=5)
+    # print("be right back style i come back swinging")
+    clf_gini.fit(X_train, y_train)
+    y_pred = clf_gini.predict(X_test)
+    print( "with gini, accuracy is ", accuracy_score(y_test,y_pred)*100)
+    clf_entropy = DecisionTreeClassifier(criterion = "entropy", random_state = 100,
+     max_depth=3, min_samples_leaf=5)
+    clf_entropy.fit(X_train, y_train)
+    y_pred_en = clf_entropy.predict(X_test)
+    print( "with entropy, accuracy is ", accuracy_score(y_test,y_pred_en)*100)
+    return
+
+@lD.log(logBase + '.load_imdb_data')
+def load_imdb_data(logger, datadir):
+    # read in training and test corpora
+    categories= ['pos', 'neg']
+    print("yeet 1")
+    train_b = load_files(datadir+'/train', shuffle=True,
+                         categories=categories)
+    print("yeet 2")
+    test_b = load_files(datadir+'/test', shuffle=True,
+                         categories=categories)
+    train_b.data = [x.decode('utf-8') for x in train_b.data]
+    test_b.data =  [x.decode('utf-8') for x in test_b.data]
+    veczr =  CountVectorizer(ngram_range=(1,3), binary=True,
+                             token_pattern=r'\w+',
+                             max_features=800000)
+    dtm_train = veczr.fit_transform(train_b.data)
+    dtm_test = veczr.transform(test_b.data)
+    y_train = train_b.target
+    y_test = test_b.target
+    print("DTM shape (training): (%s, %s)" % (dtm_train.shape))
+    print("DTM shape (test): (%s, %s)" % (dtm_train.shape))
+    num_words = len([v for k,v in veczr.vocabulary_.items()]) + 1
+    print('vocab size:%s' % (num_words))
+
+    return (dtm_train, dtm_test), (y_train, y_test), num_words
