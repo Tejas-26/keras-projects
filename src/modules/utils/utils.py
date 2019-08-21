@@ -83,7 +83,7 @@ def createDF_allRaces_anySUD(logger):
     return df
 
 @lD.log(logBase + '.logRegress')
-def nnClassify(logger, first, second, ts, num_epochs):
+def nnClassify(logger, layers):
     '''Performs classification with hidden layer NN
     Decorators:
         lD.log
@@ -119,7 +119,7 @@ def nnClassify(logger, first, second, ts, num_epochs):
         onehotencoder = OneHotEncoder(categorical_features = [0])
         X = onehotencoder.fit_transform(X).toarray()
         #80-20 train-test split
-        X_train, X_test, y_train, y_test = tts(X, y, test_size = ts)
+        X_train, X_test, y_train, y_test = tts(X, y, test_size = 0.2)
         #feature scaling
         sc = StandardScaler()
         X_train = sc.fit_transform(X_train)
@@ -127,27 +127,39 @@ def nnClassify(logger, first, second, ts, num_epochs):
 
         #Initializing Neural Network
         classifier = Sequential()
-        # Adding the input layer and the first hidden layer
-        classifier.add(Dense(output_dim = first, init = 'uniform', activation = 'relu', input_dim = 6))
-        # Adding the second hidden layer
-        classifier.add(Dense(output_dim = second, init = 'uniform', activation = 'relu'))
-        # Adding the output layer
-        classifier.add(Dense(output_dim = 1, init = 'uniform', activation = 'sigmoid'))
+        buildClassifier(classifier, layers)
+        # # Adding the output layer
+        # classifier.add(Dense(output_dim = 1, init = 'uniform',
+        #                      activation = 'sigmoid'))
         # Compiling Neural Network
-        classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
+        classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy',
+                             metrics = ['accuracy'])
         # Fitting our model
         # Number of epochs and batch sizes are hyperparameters
-        classifier.fit(X_train, y_train, batch_size = 100, epochs = num_epochs, verbose = 0)
+        history = classifier.fit(X_train, y_train, epochs = 40,
+                                 verbose = 0, batch_size = 100,
+                                 validation_data=(X_test,y_test))
+        trainL = history.history['loss']
+        testL = history.history['val_loss']
+        epoch_count = range(1,1+len(trainL))
+
+        plt.plot(epoch_count,trainL,'r--')
+        plt.plot(epoch_count,testL,'b-')
+        plt.legend(['Training Loss','Test Loss'])
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.show()
         # Predicting the Test set results
         y_pred = classifier.predict(X_test)
         y_pred = (y_pred > 0.5)
-        # Creating the Confusion Matrix
-        cm = confusion_matrix(y_test, y_pred)
-        accuracy = (cm[0][0]+cm[1][1])/(cm[0][0]+cm[0][1]+cm[1][0]+cm[1][1])
-        accuracy *=100
+        # # Creating the Confusion Matrix
+        acc = accuracy_score(y_test, y_pred)
+        print('\n%.2f'%(100*acc))
+        # accuracy = (cm[0][0]+cm[1][1])/(cm[0][0]+cm[0][1]+cm[1][0]+cm[1][1])
+        # accuracy *=100
     except Exception as e:
         logger.error('logRegress failed because of {}'.format(e))
-    return accuracy
+    return
 
 @lD.log(logBase + '.createDF_allRaces_morethan2SUD')
 def createDF_allRaces_morethan2SUD(logger):
@@ -210,51 +222,34 @@ def createDF_allRaces_morethan2SUD(logger):
     return df
 
 @lD.log(logBase + '.doSomeShit')
-def doSomeShit(logger):
-    print("Performing decision tree magic...")
-    query = '''
-    SELECT * from tejas.comorbid_data
-    limit 1000
-    '''
-    data = pgIO.getAllData(query)#returns list of tuples (T/F,.......)
-    csvfile = '../data/comorbidSUD.csv'
-    with open(csvfile,'w+') as f:
-        csv_out=csv.writer(f)
-        csv_out.writerows(data)
-    f.close()
-    balance_data = pd.read_csv(csvfile,sep= ',', header= None)
-    # print("Dataset Lenght:: ", len(balance_data))
-    # print("Dataset Shape:: ", balance_data.shape)
-    # print(balance_data)
-    Y = balance_data.iloc[:, 0].values
-    X = balance_data.iloc[:, 1:].values
-    # print(X)
-    # print(Y)
-    lab_enc_sex = LabelEncoder()
-    X[:,1] = lab_enc_sex.fit_transform(X[:,1])
-    lab_enc_setting = LabelEncoder()
-    X[:,2] = lab_enc_setting.fit_transform(X[:,2])
-    lab_enc_race = LabelEncoder()
-    X[:,3] = lab_enc_race.fit_transform(X[:,3])
-    # sex and setting are binary variables
-    # must create dummy variable for race since race = 'aa', 'nhpi' or 'mr'
-    onehotencoder = OneHotEncoder(categorical_features = [2])
-    X = onehotencoder.fit_transform(X).toarray()
-    # print("big oof")
-    X_train, X_test, y_train, y_test = tts(X,Y,test_size = 0.3,
-                                            random_state = 100)
-    # print("yeet myself off the cliff")
-    clf_gini = DecisionTreeClassifier(criterion = "gini", random_state = 100,
-                               max_depth=3, min_samples_leaf=5)
-    # print("be right back style i come back swinging")
-    clf_gini.fit(X_train, y_train)
-    y_pred = clf_gini.predict(X_test)
-    print( "with gini, accuracy is ", accuracy_score(y_test,y_pred)*100)
-    clf_entropy = DecisionTreeClassifier(criterion = "entropy", random_state = 100,
-     max_depth=3, min_samples_leaf=5)
-    clf_entropy.fit(X_train, y_train)
-    y_pred_en = clf_entropy.predict(X_test)
-    print( "with entropy, accuracy is ", accuracy_score(y_test,y_pred_en)*100)
+def buildClassifier(logger, classifier, n):
+    if n==1:
+        # one hidden layer
+        classifier.add(Dense(output_dim = 12, init = 'uniform',
+                             activation = 'relu', input_dim = 6))
+        classifier.add(Dense(output_dim = 1, init = 'uniform',
+                             activation = 'sigmoid'))
+    elif n==2:
+        # two hidden layers
+        classifier.add(Dense(output_dim = 8, init = 'uniform',
+                             activation = 'relu', input_dim = 6))
+        classifier.add(Dense(output_dim = 12, init = 'uniform',
+                             activation = 'sigmoid'))
+        classifier.add(Dense(output_dim = 1, init = 'uniform',
+                             activation = 'sigmoid'))
+    elif n==3:
+        # two hidden layers
+        classifier.add(Dense(output_dim = 18, init = 'uniform',
+                             activation = 'relu', input_dim = 6))
+        classifier.add(Dense(output_dim = 12, init = 'uniform',
+                             activation = 'sigmoid'))
+        classifier.add(Dense(output_dim = 6, init = 'uniform',
+                             activation = 'sigmoid'))
+        classifier.add(Dense(output_dim = 1, init = 'uniform',
+                             activation = 'sigmoid'))
+    else:
+        classifier.add(Dense(output_dim = 1, init = 'uniform',
+                             activation = 'sigmoid', input_dim = 6))
     return
 
 @lD.log(logBase + '.load_imdb_data')

@@ -27,7 +27,8 @@ def main(logger, resultDict):
     print('='*30)
     print('Main function of kerasDatabaseStuff module')
     print('='*30)
-    u.doSomeShit()
+    u.nnClassify(3)
+    # print(acc)
     # dict_accs = {}
     # #(number of first HL's nodes, number of 2nd HL's nodes, test size, epochs)
     # for i in range(10,100,10):
