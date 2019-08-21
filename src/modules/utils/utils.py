@@ -256,10 +256,8 @@ def buildClassifier(logger, classifier, n):
 def load_imdb_data(logger, datadir):
     # read in training and test corpora
     categories= ['pos', 'neg']
-    print("yeet 1")
     train_b = load_files(datadir+'/train', shuffle=True,
                          categories=categories)
-    print("yeet 2")
     test_b = load_files(datadir+'/test', shuffle=True,
                          categories=categories)
     train_b.data = [x.decode('utf-8') for x in train_b.data]
@@ -277,3 +275,64 @@ def load_imdb_data(logger, datadir):
     print('vocab size:%s' % (num_words))
 
     return (dtm_train, dtm_test), (y_train, y_test), num_words
+
+@lD.log(logBase + '.dtm2wid')
+def dtm2wid(dtm, maxlen):
+    x = []
+    nwds = []
+    for idx, row in enumerate(dtm):
+        seq = []
+        indices = (row.indices + 1).astype(np.int64)
+        np.append(nwds, len(indices))
+        data = (row.data).astype(np.int64)
+        count_dict = dict(zip(indices, data))
+        for k,v in count_dict.items():
+            seq.extend([k]*v)
+        num_words = len(seq)
+        nwds.append(num_words)
+        # pad up to maxlen with 0
+        if num_words < maxlen:
+            seq = np.pad(seq, (maxlen - num_words, 0),
+                         mode='constant')
+        # truncate down to maxlen
+        else:
+            seq = seq[-maxlen:]
+        x.append(seq)
+    nwds = np.array(nwds)
+    print('sequence stats: avg:%s, max:%s, min:%s' % (nwds.mean(),
+                                                      nwds.max(),
+                                                      nwds.min()) )
+    return np.array(x)
+
+@lD.log(logBase + '.pr')
+def pr(dtm, y, y_i):
+    p = dtm[y==y_i].sum(0)
+    return (p+1) / ((y==y_i).sum()+1)
+
+@lD.log(logBase + '.get_model')
+def get_model(num_words, maxlen, nbratios=None):
+    # setup the embedding matrix for NB log-count ratios
+    embedding_matrix = np.zeros((num_words, 1))
+    for i in range(1, num_words): # skip 0, the padding value
+        if nbratios is not None:
+            # if log-count ratios are supplied, then it's NBSVM
+            embedding_matrix[i] = nbratios[i-1]
+        else:
+            # if log-count ratios are not supplied,
+            # this reduces to a logistic regression
+            embedding_matrix[i] = 1
+    # setup the model
+    inp = Input(shape=(maxlen,))
+    r = Embedding(num_words, 1, input_length=maxlen,
+                  weights=[embedding_matrix],
+                  trainable=False)(inp)
+    x = Embedding(num_words, 1, input_length=maxlen,
+                  embeddings_initializer='glorot_normal')(inp)
+    x = dot([r,x], axes=1)
+    x = Flatten()(x)
+    x = Activation('sigmoid')(x)
+    model = Model(inputs=inp, outputs=x)
+    model.compile(loss='binary_crossentropy',
+                  optimizer=Adam(lr=0.001),
+                  metrics=['accuracy'])
+    return model
