@@ -82,6 +82,17 @@ def createDF_allRaces_anySUD(logger):
         logger.error('createDF_allRaces_anySUD failed because of {}'.format(e))
     return df
 
+@lD.log(logBase + '.make_dataset')
+def make_dataset(logger, csvfile, query):
+    data = pgIO.getAllData(query)#returns list of tuples (T/F,.......)
+    with open(csvfile,'w+') as f:
+        csv_out=csv.writer(f)
+        csv_out.writerow(['sud','race','age','sex','setting'])
+        csv_out.writerows(data)
+    f.close()
+    dataset = pd.read_csv(csvfile)
+    return dataset
+
 @lD.log(logBase + '.logRegress')
 def nnClassify(logger, layers):
     '''Performs classification with hidden layer NN
@@ -95,16 +106,10 @@ def nnClassify(logger, layers):
     try:
         print("Performing classification with hidden layer NN...")
         query = '''
-        SELECT * from tejas.restofusers_t3_p1
+        SELECT * from tejas.first_thou
         '''
-        data = pgIO.getAllData(query)#returns list of tuples (T/F,.......)
         csvfile = '../data/firstThouSUDorNah.csv'
-        with open(csvfile,'w+') as f:
-            csv_out=csv.writer(f)
-            csv_out.writerow(['sud','race','age','sex','setting'])
-            csv_out.writerows(data)
-        f.close()
-        dataset = pd.read_csv(csvfile)
+        dataset = make_dataset(csvfile, query)
         # print(dataset)
         X = dataset.iloc[:,1:].values #X now takes everything but sud
         y = dataset.iloc[:,0].values #sud saved for y
@@ -136,7 +141,7 @@ def nnClassify(logger, layers):
                              metrics = ['accuracy'])
         # Fitting our model
         # Number of epochs and batch sizes are hyperparameters
-        history = classifier.fit(X_train, y_train, epochs = 40,
+        history = classifier.fit(X_train, y_train, epochs = 80,
                                  verbose = 0, batch_size = 100,
                                  validation_data=(X_test,y_test))
         trainL = history.history['loss']
@@ -252,6 +257,7 @@ def buildClassifier(logger, classifier, n):
                              activation = 'sigmoid', input_dim = 6))
     return
 
+#loading imdb dataset, which is film reviews labelled as positive or negative
 @lD.log(logBase + '.load_imdb_data')
 def load_imdb_data(logger, datadir):
     # read in training and test corpora
@@ -262,6 +268,8 @@ def load_imdb_data(logger, datadir):
                          categories=categories)
     train_b.data = [x.decode('utf-8') for x in train_b.data]
     test_b.data =  [x.decode('utf-8') for x in test_b.data]
+    #each 'word' is a string of one, two or three consecutive actual words in
+    #a review (uni/bi/tri grams)
     veczr =  CountVectorizer(ngram_range=(1,3), binary=True,
                              token_pattern=r'\w+',
                              max_features=800000)
@@ -276,8 +284,11 @@ def load_imdb_data(logger, datadir):
 
     return (dtm_train, dtm_test), (y_train, y_test), num_words
 
+#converting a document-term matrix to word id sequences
+#In a binarized document-term matrix, each document is represented as a long
+#one-hot-encoded vector with most entries being zero
 @lD.log(logBase + '.dtm2wid')
-def dtm2wid(dtm, maxlen):
+def dtm2wid(logger, dtm, maxlen):
     x = []
     nwds = []
     for idx, row in enumerate(dtm):
@@ -305,12 +316,16 @@ def dtm2wid(dtm, maxlen):
     return np.array(x)
 
 @lD.log(logBase + '.pr')
-def pr(dtm, y, y_i):
+def pr(logger, dtm, y, y_i):
     p = dtm[y==y_i].sum(0)
     return (p+1) / ((y==y_i).sum()+1)
 
+#define the NBSVM model, utilising 2 embedding layers
+#layer 1 stores naive bayes log-count ratios
+#layer 2 stores learned weights for each feature
+#prediction is dot product of these two vectors
 @lD.log(logBase + '.get_model')
-def get_model(num_words, maxlen, nbratios=None):
+def get_model(logger, num_words, maxlen, nbratios=None):
     # setup the embedding matrix for NB log-count ratios
     embedding_matrix = np.zeros((num_words, 1))
     for i in range(1, num_words): # skip 0, the padding value

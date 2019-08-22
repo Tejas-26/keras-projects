@@ -1,5 +1,6 @@
 from logs import logDecorator as lD
 import jsonref
+import numpy as np
 from modules.utils import utils as u
 
 config = jsonref.load(open('../config/config.json'))
@@ -27,27 +28,21 @@ def main(logger, resultDict):
     print('='*30)
     print('Main function of kerasDatabaseStuff module')
     print('='*30)
-    # u.nnClassify(3)
-    # print(acc)
-    # dict_accs = {}
-    # #(number of first HL's nodes, number of 2nd HL's nodes, test size, epochs)
-    # for i in range(10,100,10):
-    #     acc = u.nnClassify(9,6,0.2,i)
-    #     dict_accs['{}'.format(i)] = acc
-    # print(dict_accs)
-    (dtm_train, dtm_test), (y_train, y_test), num_words = u.load_imdb_data(PATH_TO_IMDB)
-    print(num_words)
-    maxlen = 2000
-    x_train = u.dtm2wid(dtm_train, maxlen)
-    x_test = u.dtm2wid(dtm_test, maxlen)
-    nbratios = np.log(u.pr(dtm_train, y_train, 1)/u.pr(dtm_train,
-                                               y_train, 0))
-    nbratios = np.squeeze(np.asarray(nbratios))
-    model = get_model(num_words, maxlen, nbratios=nbratios)
-    model.fit(x_train, y_train,
-              batch_size=32,
-              epochs=3,
-              validation_data=(x_test, y_test))
+    u.nnClassify(0)
+
+    # (dtm_train, dtm_test), (y_train, y_test), num_words = u.load_imdb_data(PATH_TO_IMDB)
+    # print(num_words)
+    # maxlen = 2000
+    # x_train = u.dtm2wid(dtm_train, maxlen)
+    # x_test = u.dtm2wid(dtm_test, maxlen)
+    # nbratios = np.log(u.pr(dtm_train, y_train, 1)/u.pr(dtm_train,
+    #                                            y_train, 0))
+    # nbratios = np.squeeze(np.asarray(nbratios))
+    # model = u.get_model(num_words, maxlen, nbratios=nbratios)
+    # model.fit(x_train, y_train,
+    #           batch_size=32,
+    #           epochs=3,
+    #           validation_data=(x_test, y_test))
     print('Getting out of kerasDatabaseStuff module')
     print('-'*30)
     return
