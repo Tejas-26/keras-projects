@@ -230,13 +230,13 @@ def createDF_allRaces_morethan2SUD(logger):
 def buildClassifier(logger, classifier, n):
     if n==1:
         # one hidden layer
-        classifier.add(Dense(output_dim = 12, init = 'uniform',
+        classifier.add(Dense(output_dim = 4, init = 'uniform',
                              activation = 'relu', input_dim = 6))
         classifier.add(Dense(output_dim = 1, init = 'uniform',
                              activation = 'sigmoid'))
     elif n==2:
         # two hidden layers
-        classifier.add(Dense(output_dim = 8, init = 'uniform',
+        classifier.add(Dense(output_dim = 12, init = 'uniform',
                              activation = 'relu', input_dim = 6))
         classifier.add(Dense(output_dim = 12, init = 'uniform',
                              activation = 'sigmoid'))
@@ -244,11 +244,11 @@ def buildClassifier(logger, classifier, n):
                              activation = 'sigmoid'))
     elif n==3:
         # two hidden layers
-        classifier.add(Dense(output_dim = 18, init = 'uniform',
-                             activation = 'relu', input_dim = 6))
-        classifier.add(Dense(output_dim = 12, init = 'uniform',
-                             activation = 'sigmoid'))
         classifier.add(Dense(output_dim = 6, init = 'uniform',
+                             activation = 'relu', input_dim = 6))
+        classifier.add(Dense(output_dim = 18, init = 'uniform',
+                             activation = 'sigmoid'))
+        classifier.add(Dense(output_dim = 12, init = 'uniform',
                              activation = 'sigmoid'))
         classifier.add(Dense(output_dim = 1, init = 'uniform',
                              activation = 'sigmoid'))

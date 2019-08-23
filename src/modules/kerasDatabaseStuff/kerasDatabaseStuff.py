@@ -28,21 +28,20 @@ def main(logger, resultDict):
     print('='*30)
     print('Main function of kerasDatabaseStuff module')
     print('='*30)
-    u.nnClassify(0)
-
-    # (dtm_train, dtm_test), (y_train, y_test), num_words = u.load_imdb_data(PATH_TO_IMDB)
-    # print(num_words)
-    # maxlen = 2000
-    # x_train = u.dtm2wid(dtm_train, maxlen)
-    # x_test = u.dtm2wid(dtm_test, maxlen)
-    # nbratios = np.log(u.pr(dtm_train, y_train, 1)/u.pr(dtm_train,
-    #                                            y_train, 0))
-    # nbratios = np.squeeze(np.asarray(nbratios))
-    # model = u.get_model(num_words, maxlen, nbratios=nbratios)
-    # model.fit(x_train, y_train,
-    #           batch_size=32,
-    #           epochs=3,
-    #           validation_data=(x_test, y_test))
+    # u.nnClassify(1)
+    (dtm_train, dtm_test), (y_train, y_test), num_words = u.load_imdb_data(PATH_TO_IMDB)
+    print(num_words)
+    maxlen = 2000
+    x_train = u.dtm2wid(dtm_train, maxlen)
+    x_test = u.dtm2wid(dtm_test, maxlen)
+    nbratios = np.log(u.pr(dtm_train, y_train, 1)/u.pr(dtm_train,
+                                               y_train, 0))
+    nbratios = np.squeeze(np.asarray(nbratios))
+    model = u.get_model(num_words, maxlen, nbratios=nbratios)
+    model.fit(x_train, y_train,
+              batch_size=32,
+              epochs=3,
+              validation_data=(x_test, y_test))
     print('Getting out of kerasDatabaseStuff module')
     print('-'*30)
     return
