@@ -141,7 +141,7 @@ def nnClassify(logger, layers):
                              metrics = ['accuracy'])
         # Fitting our model
         # Number of epochs and batch sizes are hyperparameters
-        history = classifier.fit(X_train, y_train, epochs = 80,
+        history = classifier.fit(X_train, y_train, epochs = 40,
                                  verbose = 0, batch_size = 100,
                                  validation_data=(X_test,y_test))
         trainL = history.history['loss']
@@ -239,7 +239,7 @@ def buildClassifier(logger, classifier, n):
         classifier.add(Dense(output_dim = 12, init = 'uniform',
                              activation = 'relu', input_dim = 6))
         classifier.add(Dense(output_dim = 12, init = 'uniform',
-                             activation = 'sigmoid'))
+                             activation = 'relu'))
         classifier.add(Dense(output_dim = 1, init = 'uniform',
                              activation = 'sigmoid'))
     elif n==3:
@@ -247,9 +247,9 @@ def buildClassifier(logger, classifier, n):
         classifier.add(Dense(output_dim = 6, init = 'uniform',
                              activation = 'relu', input_dim = 6))
         classifier.add(Dense(output_dim = 18, init = 'uniform',
-                             activation = 'sigmoid'))
+                             activation = 'relu'))
         classifier.add(Dense(output_dim = 12, init = 'uniform',
-                             activation = 'sigmoid'))
+                             activation = 'relu'))
         classifier.add(Dense(output_dim = 1, init = 'uniform',
                              activation = 'sigmoid'))
     else:

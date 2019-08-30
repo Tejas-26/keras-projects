@@ -28,7 +28,7 @@ def main(logger, resultDict):
     print('='*30)
     print('Main function of kerasDatabaseStuff module')
     print('='*30)
-    # u.nnClassify(1)
+    # u.nnClassify(2)
     (dtm_train, dtm_test), (y_train, y_test), num_words = u.load_imdb_data(PATH_TO_IMDB)
     print(num_words)
     maxlen = 2000
